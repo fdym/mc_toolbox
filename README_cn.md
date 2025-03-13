@@ -1,0 +1,3 @@
+# mc_toolbox
+这是一个提供Minecraft的下载和启动的python库。
+这个python库还处于早期阶段（以至于master分支还没有内容）。
