@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+#
+#  download.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 '''
 This module provides multiple ways to download single or multiple files.
 '''
@@ -74,13 +94,14 @@ def raise_if_exist(filename: str):
 class HttpProxy:
     '''
     Describe the class of HTTP proxies.
-    netloc: URL withOUT protocol
-    https: boolean representing whether HTTPS is used or not
-    username: proxy username
-    password: proxy password
+
+    :param netloc: URL withOUT protocol
+    :param https: boolean representing whether HTTPS is used or not
+    :param username: proxy username
+    :param password: proxy password
 
     example:
-    proxy = HttpProxy('142.8.5.7:8080', True, 'username', 'password' 
+    `proxy = HttpProxy('142.8.5.7:8080', True, 'username', 'password'`
     '''
     def __init__(
         self, netloc: str, https=False,
@@ -122,12 +143,13 @@ class HttpProxy:
 class SocksProxy:
     '''
     Describe the class of HTTP proxies
-    netloc: URL withOUT protocol
-    username: proxy username
-    password: proxy password
+
+    :param netloc: URL withOUT protocol
+    :param username: proxy username
+    :param password: proxy password
 
     example:
-    proxy = SocksProxy('142.8.5.7:8080', True, 'username', 'password')
+    `proxy = SocksProxy('142.8.5.7:8080', 'username', 'password')`
     '''
     def __init__(self, netloc: str, username: str=None, password: str=None):
         self.netloc = netloc
@@ -172,14 +194,14 @@ class Downloader:
     '''
     A regular file download class.
 
-    url: the URL of the file that needs to be downloaded
-    file: file path (can be a relative path)
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    chunk_size:  unit for streaming download, default 8KB
-    when_exist:  a function used to handle files with duplicate names.
+    :param url: the URL of the file that needs to be downloaded
+    :param file: file path (can be a relative path)
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param chunk_size:  unit for streaming download, default 8KB
+    :param when_exist:  a function used to handle files with duplicate names.
                  When used, it passes a parameter representing the original file name and should return the processed file name.
                  The default value is rename_if_exist
 
@@ -288,19 +310,19 @@ class MultithreadingDownloader(Downloader):
     '''
     A class that accelerates downloading by simultaneously downloading multiple parts of a single file through thread based parallelism.
 
-    url: the URL of the file that needs to be downloaded
-    file: file path (can be a relative path)
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    num_threads: number of threads, default is 60
-    chunk_size:  unit for streaming download, default 8KB
-    thread_timeout: same as timeout, but used to wait for threads
-    in_memory:  whether to use memory to store temporary data, default is False
-    when_exist:  a function used to handle files with duplicate names.
-                 When used, it passes a parameter representing the original file name and should return the processed file name.
-                 The default value is rename_if_exist
+    :param url: the URL of the file that needs to be downloaded
+    :param file: file path (can be a relative path)
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param num_threads: number of threads, default is 60
+    :param chunk_size:  unit for streaming download, default 8KB
+    :param thread_timeout: same as timeout, but used to wait for threads
+    :param in_memory:  whether to use memory to store temporary data, default is False
+    :param when_exist:  a function used to handle files with duplicate names.
+                        When used, it passes a parameter representing the original file name and should return the processed file name.
+                        The default value is rename_if_exist
 
     Note: 
     Excessive retry can lead to RecursiveError;
@@ -483,13 +505,13 @@ def download(
     '''
     A regular file download function.
 
-    url: the URL of the file that needs to be downloaded
-    file: file path (can be a relative path)
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    chunk_size:  unit for streaming download, default 8KB
+    :param url: the URL of the file that needs to be downloaded
+    :param file: file path (can be a relative path)
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param chunk_size:  unit for streaming download, default 8KB
 
     Note: Excessive retry can lead to RecursiveError
     '''
@@ -524,13 +546,13 @@ def multithreading_downloadS(
     '''
     A function that downloads multiple files simultaneously through thread based parallelism.
 
-    urls: List of URLs for files that need to be downloaded
-    filenames: List of file paths (which can be relative paths)
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    chunk_size:  unit for streaming download, default 8KB
+    :param urls: List of URLs for files that need to be downloaded
+    :param filenames: List of file paths (which can be relative paths)
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param chunk_size:  unit for streaming download, default 8KB
 
     Note: Excessive retry can lead to RecursiveError
     '''
@@ -607,16 +629,16 @@ def multithreading_download(
     '''
     A function that accelerates downloading by simultaneously downloading multiple parts of a single file through thread based parallelism.
 
-    url: the URL of the file that needs to be downloaded
-    file: file path (can be a relative path)
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    num_threads: number of threads, default is 60
-    chunk_size:  unit for streaming download, default 8KB
-    thread_timeout: same as timeout, but used to wait for threads
-    in_memory:  whether to use memory to store temporary data, default is False
+    :param url: the URL of the file that needs to be downloaded
+    :param file: file path (can be a relative path)
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param num_threads: number of threads, default is 60
+    :param chunk_size:  unit for streaming download, default 8KB
+    :param thread_timeout: same as timeout, but used to wait for threads
+    :param in_memory:  whether to use memory to store temporary data, default is False
 
     Note:
     Excessive retry can lead to RecursiveError;

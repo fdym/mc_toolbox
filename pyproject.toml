@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mc_toolbox"
+version = "0.3"
+authors = [
+    { name="fdym" },
+]
+description = "This is a Python library that provides downloading and launching of Minecraft."
+readme = "README.md"
+license = "gpl-2.0-only"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "requests",
+    "PySocks",
+    "pony",
+]
+
+[project.urls]
+"Source" = "https://github.com/fdym/mc_toolbox"
+"Bug Tracker" = "https://github.com/fdym/mc_toolbox/issues"

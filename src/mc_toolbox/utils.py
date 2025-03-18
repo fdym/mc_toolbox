@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+#
+#  utils.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 '''
 This module provides some practical tools (such as detecting operating systems, etc.).
 '''
@@ -6,13 +26,21 @@ from subprocess import PIPE, Popen
 import platform as pf
 import re
 
-from .exception import NotAMacOS
-
 __all__ = [
     'Platform',
     'Arch',
     'get_platform',
     'get_architecture',
+    'get_system_version',
+    'VANILLA',
+    'FORGE',
+    'FABRIC',
+    # 'LITELOADER'
+    'QUILT',
+    'NEOFORGE',
+    'OPTIFINE',
+    'MICROSOFT',
+    'OFFLINE',
 ]
 
 # platform
@@ -49,10 +77,22 @@ def get_architecture(hf=True):
     elif (arch in ['arm', 'arm32', 'aarch32']) or ('armv' in arch):
         return Arch.ARM_HF if hf else Arch.ARM_EL
 
-def get_true_mac_version() -> str:
-    if get_platform() != Platform.MACOS:
-        raise NotAMacOS('Not a MacOS.')
-    p = Popen("sw_vers", stdout=PIPE)
-    result = p.communicate()[0].decode('ascii')
-    ver = re.compile(r'ProductVersion:\s(.*)').search(result).group(1)
-    return ver
+def get_system_version() -> str:
+    if get_platform() == Platform.MACOS:
+        p = Popen("sw_vers", stdout=PIPE)
+        result = p.communicate()[0].decode('ascii')
+        ver = re.compile(r'ProductVersion:\s(.*)').search(result).group(1)
+        return ver
+    if get_platform() == Platform.WINDOWS:
+        return pf.version()
+
+VANILLA = 'Minecraft'
+FORGE = 'Forge'
+FABRIC = 'Fabric'
+# LITELOADER = 'LiteLoader'
+QUILT = 'Quilt'
+NEOFORGE = 'Neoforge'
+OPTIFINE = 'OptiFine'
+
+MICROSOFT = 'msa'
+OFFLINE = 'legacy'

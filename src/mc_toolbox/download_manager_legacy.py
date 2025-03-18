@@ -1,17 +1,37 @@
+# -*- coding: utf-8 -*-
+#
+#  download_manager_legacy.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 '''
 This module is an old implementation of the asynchronous download scheduler
 and cannot specify SQLite database files for storage.
 Please use mc_toolbox.download_manager instead.
 '''
 from collections import namedtuple
-from typing import List, Tuple, Union, Generator, Optional
+from typing import List, Tuple, Union, Iterable, Optional
 import logging
 
 from pony import orm
 
 from .download import Downloader, MultithreadingDownloader, HttpProxy, SocksProxy, NoProxy, rename_if_exist
 from .exception import DatabaseError
-from .futures import MyProcessPoolExecutor, DownloaderFuture
+from .futures import MyProcessPoolExecutor, MyThreadPoolExecutor, DownloaderFuture
 # class DatabaseError(Exception): pass
 
 __all__ = [
@@ -136,7 +156,7 @@ def get_task_from_group(group_id: int) -> List[int]:
     '''
     Find all members of the group.
 
-    group_id: Group ID
+    :param group_id: Group ID
     '''
     result = []
     for task in DownloadGroups.select(lambda task: task.group_id == group_id):
@@ -148,7 +168,7 @@ def get_group_from_task(task_id: int) -> Optional[int]:
     '''
     Find the group to which the task belongs.
 
-    task_id: Task ID
+    :param task_id: Task ID
 
     Note: Returning None means that the task does not exist
     '''
@@ -165,10 +185,10 @@ def add_task(name: str, url: str, filename: str, is_thread: bool=False) -> AddTa
     '''
     Add task.
 
-    name: task name (must be unique)
-    url: URL
-    filename: the path saved after downloading
-    is_thread: representing the use of multi-threaded Boolean values
+    :param name: task name (must be unique)
+    :param url: URL
+    :param filename: the path saved after downloading
+    :param is_thread: representing the use of multi-threaded Boolean values
 
     Note: Returns a named tuple containing the task ID and group ID.
     '''
@@ -188,7 +208,7 @@ def get_task(name_or_id: Union[str, int]) -> GetTaskNamedTuple[int, str, str, st
     '''
     Get information about this task.
 
-    name_or_id: the name or ID of this task
+    :param name_or_id: the name or ID of this task
 
     Note: Returns a tuple containing task ID, task name, URL, filename, 
     boolean values indicating whether multi-threaded is being used and whether downloading is in progress.
@@ -211,11 +231,12 @@ def mod_task(
     '''
     Modify task.
 
-    name_or_id: task Name or Task ID
-    url: URL
-    filename: the path saved after downloading
-    is_thread: representing the use of multi-threaded Boolean values
-    group_id: group ID
+    :param name_or_id: task Name or Task ID
+    :param url: URL
+    :param filename: the path saved after downloading
+    :param is_thread: representing the use of multi-threaded Boolean values
+    :param group_id: group ID
+
     Except for the name_or_id attribute,
     all other attributes can be set to None and default to None (indicating no modification).
     '''
@@ -245,7 +266,7 @@ def del_task(name_or_id: Union[str, int]) ->GetTaskNamedTuple[int, str, str, str
     '''
     Delete task.
 
-    name_or_id: task Name or Task ID
+    :param name_or_id: task Name or Task ID
 
     Note: This function will provide the same return format as get_task.
     '''
@@ -263,6 +284,7 @@ def del_task(name_or_id: Union[str, int]) ->GetTaskNamedTuple[int, str, str, str
     return result
 
 executor = MyProcessPoolExecutor()
+thread_executor = MyThreadPoolExecutor()
 
 @orm.db_session
 def _set_downloading_to_false(name_or_id: Union[str, int], future=None):
@@ -289,18 +311,18 @@ def exec_task(
     '''
     Now, it's time to start a download task using this function.
 
-    name_or_id: task name or task ID
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    num_threads: number of threads, default is 60
-    chunk_size:  unit for streaming download, default 8KB
-    thread_timeout: same as timeout, but used to wait for threads
-    in_memory:  whether to use memory to store temporary data, default is False
-    when_exist:  a function used to handle files with duplicate names.
-                 When used, it passes a parameter representing the original file name and should return the processed file name.
-                 The default value is rename_if_exist
+    :param name_or_id: task name or task ID
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param num_threads: number of threads, default is 60
+    :param chunk_size:  unit for streaming download, default 8KB
+    :param thread_timeout: same as timeout, but used to wait for threads
+    :param in_memory:  whether to use memory to store temporary data, default is False
+    :param when_exist:  a function used to handle files with duplicate names.
+                        When used, it passes a parameter representing the original file name and should return the processed file name.
+                        The default value is rename_if_exist
 
     Note: If the task is set to not use multithreading, then num_thread, in_memory and thread_timeout properties will be ignored.
     '''
@@ -362,22 +384,22 @@ def exec_taskS(
         thread_timeout: float=None,
         chunk_size: int=1024 * 8,
         when_exist=rename_if_exist,
-) -> Generator[ExecTaskNamedTuple[Union[Downloader, MultithreadingDownloader], DownloaderFuture]]:
+) -> Iterable[ExecTaskNamedTuple[Union[Downloader, MultithreadingDownloader], DownloaderFuture]]:
     '''
     Use this GENERATOR to execute all tasks within a group.
 
-    group_id: group ID
-    proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-    timeout: how long to wait is considered timeout, default is None
-    retry: the number of retries after a failed request, default is 0
-    headers: request header, default value is {}
-    num_threads: number of threads, default is 60
-    chunk_size:  unit for streaming download, default 8KB
-    thread_timeout: same as timeout, but used to wait for threads
-    in_memory:  whether to use memory to store temporary data, default is False
-    when_exist:  a function used to handle files with duplicate names.
-                 When used, it passes a parameter representing the original file name and should return the processed file name.
-                 The default value is rename_if_exist
+    :param group_id: group ID
+    :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+    :param timeout: how long to wait is considered timeout, default is None
+    :param retry: the number of retries after a failed request, default is 0
+    :param headers: request header, default value is {}
+    :param num_threads: number of threads, default is 60
+    :param chunk_size:  unit for streaming download, default 8KB
+    :param thread_timeout: same as timeout, but used to wait for threads
+    :param in_memory:  whether to use memory to store temporary data, default is False
+    :param when_exist:  a function used to handle files with duplicate names.
+                        When used, it passes a parameter representing the original file name and should return the processed file name.
+                        The default value is rename_if_exist
 
     Note: If the task is set to not use multithreading, then num_thread, in_memory and thread_timeout properties will be ignored.
     '''
@@ -421,25 +443,6 @@ def exec_taskS(
             logger.debug(f'All parameters passed to Downloader: {kwargs}')
             downloader = Downloader(**kwargs)
             DownloadTasks.get(task_id=task_id).set(downloading=True)
-            future = executor.submit(downloader.start)
+            future = thread_executor.submit(downloader.start) # thread_executor
             future.add_done_callback(_set_downloading_to_false, task_id)
             yield ExecTaskNamedTuple(downloader, future)
-        
-
-if __name__ == '__main__':
-    # logging.basicConfig(level=logging.INFO)
-
-    # initialization()
-    # print(get_task_count())
-
-    # task_id, group_id = add_task('test', 'https://fdymcreep.net', 'index.html')
-
-    # print(get_task(task_id))
-    # print(get_task_from_group(group_id))
-    # print(get_group_from_task(task_id))
-
-    # mod_task(task_id, is_thread=True)
-
-    # print(del_task(task_id))
-    # print(task_count)
-    exit()
