@@ -1,15 +1,35 @@
+# -*- coding: utf-8 -*-
+#
+#  download_manager.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 '''
 This module implements a simple task scheduling and storage system through SQLite and Pony ORM.
 '''
 from collections import namedtuple
-from typing import List, Tuple, Union, Generator, Optional
+from typing import List, Tuple, Union, Iterable, Optional
 import logging
 
 from pony import orm
 
 from .download import Downloader, MultithreadingDownloader, HttpProxy, SocksProxy, NoProxy, rename_if_exist
 from .exception import DatabaseError
-from .futures import MyProcessPoolExecutor, DownloaderFuture
+from .futures import MyProcessPoolExecutor, MyThreadPoolExecutor, DownloaderFuture
 
 __all__ = [
     'AddTaskNamedTuple',
@@ -34,7 +54,7 @@ class Manager:
     '''
     This class can asynchronously schedule download tasks through multiple processes.
 
-    db: A Pony ORM Database object, which should have already executed its bind method.
+    :param db: A Pony ORM Database object, which should have already executed its bind method.
     
     It is recommended to call the return value of the database_class_builder as a parameter,
     as this function will automatically execute the bind method of the Database object.
@@ -128,6 +148,7 @@ class Manager:
         inner1()
         self.task_count, self.group_count = 1, 1
         self.executor = MyProcessPoolExecutor()
+        self.thread_executor = MyThreadPoolExecutor()
         self.db.create_tables()
         inner2()
         logger.info('The database has been initialized.')
@@ -137,7 +158,7 @@ class Manager:
         '''
         Find all members of the group.
 
-        group_id: Group ID
+        :param group_id: Group ID
         '''
         result = []
         for task in self.DownloadGroups.select(lambda task: task.group_id == group_id):
@@ -149,7 +170,7 @@ class Manager:
         '''
         Find the group to which the task belongs.
 
-        task_id: Task ID
+        :param task_id: Task ID
 
         Note: Returning None means that the task does not exist
         '''
@@ -164,10 +185,10 @@ class Manager:
         '''
         Add task.
 
-        name: task name (must be unique)
-        url: URL
-        filename: the path saved after downloading
-        is_thread: representing the use of multi-threaded Boolean values
+        :param name: task name (must be unique)
+        :param url: URL
+        :param filename: the path saved after downloading
+        :param is_thread: representing the use of multi-threaded Boolean values
 
         Note: Returns a named tuple containing the task ID and group ID.
         '''
@@ -185,7 +206,7 @@ class Manager:
         '''
         Get information about this task.
 
-        name_or_id: the name or ID of this task
+        :param name_or_id: the name or ID of this task
 
         Note: Returns a tuple containing task ID, task name, URL, filename, 
         boolean values indicating whether multi-threaded is being used and whether downloading is in progress.
@@ -208,11 +229,12 @@ class Manager:
         '''
         Modify task.
 
-        name_or_id: task Name or Task ID
-        url: URL
-        filename: the path saved after downloading
-        is_thread: representing the use of multi-threaded Boolean values
-        group_id: group ID
+        :param name_or_id: task Name or Task ID
+        :param url: URL
+        :param filename: the path saved after downloading
+        :param is_thread: representing the use of multi-threaded Boolean values
+        :param group_id: group ID
+
         Except for the name_or_id attribute,
         all other attributes can be set to None and default to None (indicating no modification).
         '''
@@ -241,7 +263,7 @@ class Manager:
         '''
         Delete task.
 
-        name_or_id: task Name or Task ID
+        :param name_or_id: task Name or Task ID
 
         Note: This function will provide the same return format as get_task.
         '''
@@ -281,18 +303,18 @@ class Manager:
         '''
         Now, it's time to start a download task using this function.
 
-        name_or_id: task name or task ID
-        proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-        timeout: how long to wait is considered timeout, default is None
-        retry: the number of retries after a failed request, default is 0
-        headers: request header, default value is {}
-        num_threads: number of threads, default is 60
-        chunk_size:  unit for streaming download, default 8KB
-        thread_timeout: same as timeout, but used to wait for threads
-        in_memory:  whether to use memory to store temporary data, default is False
-        when_exist:  a function used to handle files with duplicate names.
-                    When used, it passes a parameter representing the original file name and should return the processed file name.
-                    The default value is rename_if_exist
+        :param name_or_id: task name or task ID
+        :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+        :param timeout: how long to wait is considered timeout, default is None
+        :param retry: the number of retries after a failed request, default is 0
+        :param headers: request header, default value is {}
+        :param num_threads: number of threads, default is 60
+        :param chunk_size:  unit for streaming download, default 8KB
+        :param thread_timeout: same as timeout, but used to wait for threads
+        :param in_memory:  whether to use memory to store temporary data, default is False
+        :param when_exist:  a function used to handle files with duplicate names.
+                            When used, it passes a parameter representing the original file name and should return the processed file name.
+                            The default value is rename_if_exist
 
         Note: If the task is set to not use multithreading, then num_thread, in_memory and thread_timeout properties will be ignored.
         '''
@@ -354,22 +376,22 @@ class Manager:
             thread_timeout: float=None,
             chunk_size: int=1024 * 8,
             when_exist=rename_if_exist,
-    ) -> Generator[ExecTaskNamedTuple[Union[Downloader, MultithreadingDownloader], DownloaderFuture]]:
+    ) -> Iterable[ExecTaskNamedTuple[Union[Downloader, MultithreadingDownloader], DownloaderFuture]]:
         '''
         Use this GENERATOR to execute all tasks within a group.
 
-        group_id: group ID
-        proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
-        timeout: how long to wait is considered timeout, default is None
-        retry: the number of retries after a failed request, default is 0
-        headers: request header, default value is {}
-        num_threads: number of threads, default is 60
-        chunk_size:  unit for streaming download, default 8KB
-        thread_timeout: same as timeout, but used to wait for threads
-        in_memory:  whether to use memory to store temporary data, default is False
-        when_exist:  a function used to handle files with duplicate names.
-                    When used, it passes a parameter representing the original file name and should return the processed file name.
-                    The default value is rename_if_exist
+        :param group_id: group ID
+        :param proxies: HTTP/SOCKS proxy object, default value is an instance of NoProxy (indicating not using a proxy)
+        :param timeout: how long to wait is considered timeout, default is None
+        :param retry: the number of retries after a failed request, default is 0
+        :param headers: request header, default value is {}
+        :param num_threads: number of threads, default is 60
+        :param chunk_size:  unit for streaming download, default 8KB
+        :param thread_timeout: same as timeout, but used to wait for threads
+        :param in_memory:  whether to use memory to store temporary data, default is False
+        :param when_exist:  a function used to handle files with duplicate names.
+                            When used, it passes a parameter representing the original file name and should return the processed file name.
+                            The default value is rename_if_exist
 
         Note: If the task is set to not use multithreading, then num_thread, in_memory and thread_timeout properties will be ignored.
         '''
@@ -413,6 +435,6 @@ class Manager:
                 logger.debug(f'All parameters passed to Downloader: {kwargs}')
                 downloader = Downloader(**kwargs)
                 self.DownloadTasks.get(task_id=task_id).set(downloading=True)
-                future = self.executor.submit(downloader.start)
+                future = self.thread_executor.submit(downloader.start) # thread_executor
                 future.add_done_callback(self._set_downloading_to_false, task_id)
                 yield ExecTaskNamedTuple(downloader, future)

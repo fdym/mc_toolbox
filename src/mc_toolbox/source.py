@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+#
+#  source.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
 '''
 Declare multiple sources.
 '''
@@ -58,14 +78,14 @@ class Source:
         '''
         Get the URL of the client.json for vanilla Minecraft.
 
-        mcversion: minecraft version
+        :param mcversion: minecraft version
         '''
 
     def get_vanilla_client_url(self, mcversion: str) -> str:
         '''
         Get the URL of the client for vanilla Minecraft.
 
-        mcversion: minecraft version
+        :param mcversion: minecraft version
         '''
 
     forge_base_url = ''
@@ -81,8 +101,8 @@ class Source:
         '''
         Get the URL of Forge.
 
-        mcversion: minecraft version
-        forge_version: forge version
+        :param mcversion: minecraft version
+        :param forge_version: forge version
         '''
 
     fabric_base_url = ''
@@ -107,7 +127,7 @@ class Source:
         '''
         Get the URL of Fabric Installer.
 
-        installer_version: installer version
+        :param installer_version: installer version
         '''
 
     quilt_base_url = ''
@@ -132,7 +152,7 @@ class Source:
         '''
         Get the URL of Quilt Installer.
 
-        installer_version: installer version
+        :param installer_version: installer version
         '''
 
     # def get_liteloader_list(self) -> List[str]:
@@ -152,8 +172,8 @@ class Source:
         '''
         Get the URL of NeoForge.
 
-        mcversion: minecraft version
-        neoforge_version: neoforge version
+        :param mcversion: minecraft version
+        :param neoforge_version: neoforge version
         '''
 
     optifine_base_url = ''
@@ -167,8 +187,8 @@ class Source:
         '''
         Get the URL of OptiFine.
 
-        mcversion: minecraft version
-        Name: optifine version name
+        :param mcversion: minecraft version
+        :param name: optifine version name
         '''
 
 class OfficialSource(Source):
