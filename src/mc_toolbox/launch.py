@@ -42,6 +42,16 @@ from .utils import (
     VANILLA,
 )
 
+__all__ = [
+    'get_natives_json',
+    'rule_check',
+    'get_classpath',
+    'LaunchOption',
+    'get_game_args',
+    'get_jvm_args',
+    'get_launch_script',
+]
+
 cache = CacheManager(max_size=5, ttl=600)
 
 @cache.cache('natives_json')
@@ -332,15 +342,15 @@ def get_jvm_args(
 
     if isinstance(proxies, HttpProxy):
         proxies_t = proxies.netloc.split(':')
-        result_list.append(f'-Dhttp.proxyHost= {proxies_t[0]}')
-        result_list.append(f'-Dhttp.proxyPort= {proxies_t[1]}')
+        result_list.append(f'"-Dhttp.proxyHost={proxies_t[0]}"')
+        result_list.append(f'"-Dhttp.proxyPort={proxies_t[1]}"')
         if proxies.https:
-            result_list.append(f'-Dhttps.proxyHost= {proxies_t[0]}')
-            result_list.append(f'-Dhttps.proxyPort= {proxies_t[1]}')
+            result_list.append(f'"-Dhttps.proxyHost={proxies_t[0]}"')
+            result_list.append(f'"-Dhttps.proxyPort={proxies_t[1]}"')
     elif isinstance(proxies, SocksProxy):
         proxies_t = proxies.netloc.split(':')
-        result_list.append(f'-DsocksProxyHost= {proxies_t[0]}')
-        result_list.append(f'-DsocksProxyPort= {proxies_t[1]}')
+        result_list.append(f'"-DsocksProxyHost={proxies_t[0]}"')
+        result_list.append(f'"-DsocksProxyPort={proxies_t[1]}"')
 
     result_list.append(f'-Xmx{memory}M "-Dfile.encoding=UTF-8"')
     if java.major_version < 19:
