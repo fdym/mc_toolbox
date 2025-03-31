@@ -27,6 +27,7 @@ dependencies = [
     "requests",
     "PySocks",
     "pony",
+    "watchdog<5",
 ]
 
 [project.urls]

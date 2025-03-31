@@ -1,3 +1,26 @@
+# -*- coding: utf-8 -*-
+#
+#  execute.py
+#  
+#  Copyright 2025 fdym
+#  
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#  
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301, USA.
+'''
+Execute the program and monitor its output.
+'''
 from collections import namedtuple
 from logging import FATAL, ERROR, WARNING, INFO, DEBUG, NOTSET as TRACE
 from os.path import dirname
@@ -9,7 +32,17 @@ import re
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 from watchdog.observers import Observer
 
-ExecuteNamedTuple = namedtuple('ExecuteNamedTuple', ['pipe', 'observer'])
+__all__ = [
+    'ExecuteNamedTuple',
+    'MINECRAFT_LOGGER',
+    'MINECRAFT_LOGGER_CATEGORY',
+    'level_strings',
+    'guess_level',
+    'simple_callback',
+    'start',
+]
+
+ExecuteNamedTuple = namedtuple('ExecuteNamedTuple', ['pipe', 'observer', 'temp'])
 
 MINECRAFT_LOGGER = re.compile('\\[(?P<timestamp>[0-9:]+)] \\[[^/]+/(?P<level>[^]]+)]')
 MINECRAFT_LOGGER_CATEGORY = re.compile('\\[(?P<timestamp>[0-9:]+)] \\[[^/]+/(?P<level>[^]]+)] \\[(?P<category>[^]]+)]')
@@ -24,6 +57,9 @@ level_strings = {
 }
 
 def guess_level(line: str) -> int:
+    '''
+    Guess the log level of a certain line.
+    '''
     level = INFO
     m = MINECRAFT_LOGGER.match(line)
     if m:
@@ -91,6 +127,15 @@ class _PathEventHandler(FileSystemEventHandler):
                     self.callback(lines)
 
 def start(arg: str, log: bool=True, callback: Optional[Callable[[List[str]], None]]=simple_callback) -> ExecuteNamedTuple[Popen, Optional[Observer]]:
+    '''
+    Execute commands and monitor their output.
+
+    arg: command
+    log: represents whether to track the output Boolean value
+    callback: if log is True, the monitored output lines will be passed to this parameter in a list format
+    
+    If the log is False, the observer item of the return value will be None.
+    '''
     temp = NamedTemporaryFile('w+', buffering=1, encoding='utf-8', delete=False)
     pipe = Popen(
         arg,
@@ -106,4 +151,4 @@ def start(arg: str, log: bool=True, callback: Optional[Callable[[List[str]], Non
         observer = Observer()
         observer.schedule(handler, path=dirname(temp.name))
         observer.start()
-    return ExecuteNamedTuple(pipe, observer)
+    return ExecuteNamedTuple(pipe, observer, temp)

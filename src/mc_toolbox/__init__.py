@@ -24,12 +24,14 @@ from . import (
     download_manager,
     download_manager_legacy,
     exception,
+    execute,
     futures,
     java,
     launch,
     resources,
     source,
     utils,
+    versions,
 )
 
 __all__ = [
@@ -38,12 +40,14 @@ __all__ = [
     'download_manager',
     'download_manager_legacy',
     'exception',
+    'execute',
     'futures',
     'java',
     'launch',
     'resources',
     'source',
     'utils',
+    'versions',
 ]
 __author__ = [
     'fdym <fdym_dlygzh@163.com>',

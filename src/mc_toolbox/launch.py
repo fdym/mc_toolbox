@@ -43,6 +43,7 @@ from .utils import (
 )
 
 __all__ = [
+    'cache',
     'get_natives_json',
     'rule_check',
     'get_classpath',
